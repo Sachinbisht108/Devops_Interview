@@ -1,0 +1,277 @@
+java.sh
+
+# Define the Java version to install
+JAVA_VERSION="17"
+USER="apmosys"
+#USER1="administrator"
+
+# Install OpenJDK
+sudo apt update
+sudo apt install -y openjdk-${JAVA_VERSION}-jdk
+
+# Set Java path globally in /etc/environment
+echo "JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64" | sudo tee -a /home/$USER/.bashrc
+echo "PATH=\$PATH:\$JAVA_HOME/bin" | sudo tee -a /home/$USER/.bashrc
+
+# Add Java path to all users' .bashrc
+echo "export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64" | sudo tee -a /etc/skel/.bashrc
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" | sudo tee -a /etc/skel/.bashrc
+
+# Source .bashrc to apply changes immediately
+source /home/$USER/.bashrc
+
+echo "Java ${JAVA_VERSION} installation completed."
+
+
+-------------------------------------------------------------------
+
+mysql.sh
+
+#!/bin/bash
+
+# Set MySQL root password
+MYSQL_ROOT_PASSWORD="Welcome@2023"
+
+# Install MySQL server
+#sudo apt update
+sudo apt install -y mysql-server
+
+# Start MySQL service
+sudo systemctl start mysql
+
+# Secure MySQL installation
+sudo mysql_secure_installation <<EOF
+
+y
+$MYSQL_ROOT_PASSWORD
+$MYSQL_ROOT_PASSWORD
+y
+y
+y
+y
+EOF
+
+# Create MySQL user with all privileges
+sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<MYSQL_SCRIPT
+CREATE USER 'root'@'%' IDENTIFIED BY 'Welcome@2023';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+MYSQL_SCRIPT
+
+echo "MySQL installation and user setup completed."
+
+
+
+-------------------------------------------------------
+
+chrome.sh
+
+#!/bin/bash
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root or using sudo."
+    exit 1
+fi
+
+# Add the Google Chrome repository
+echo "Adding Google Chrome repository..."
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+
+# Download and install the Google Chrome signing key
+echo "Downloading and installing the Google Chrome signing key..."
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# Update the package lists
+echo "Updating package lists..."
+apt update
+
+# Install Google Chrome
+echo "Installing Google Chrome..."
+apt install google-chrome-stable -y
+
+echo "Google Chrome installation completed."
+
+
+-------------------------------------------------------
+
+postman.sh
+
+#!/bin/bash
+
+# Download Postman
+wget -O postman.tar.gz https://dl.pstmn.io/download/latest/linux64
+
+# Extract Postman to /opt directory
+sudo tar -xzf postman.tar.gz -C /opt
+
+# Create a symbolic link
+sudo ln -s /opt/Postman/Postman /usr/local/bin/postman
+
+# Create a desktop entry
+cat <<EOF > /usr/share/applications/postman.desktop
+[Desktop Entry]
+Name=Postman
+Exec=postman
+Icon=/opt/Postman/app/resources/app/assets/icon.png
+Terminal=false
+Type=Application
+Categories=Development;
+EOF
+
+# Cleanup
+rm postman.tar.gz
+
+echo "Postman has been installed successfully."
+
+
+----------------------------------------------------------
+
+vnc.sh
+
+
+#!/bin/bash
+
+# Download Postman
+wget -O postman.tar.gz https://dl.pstmn.io/download/latest/linux64
+
+# Extract Postman to /opt directory
+sudo tar -xzf postman.tar.gz -C /opt
+
+# Create a symbolic link
+sudo ln -s /opt/Postman/Postman /usr/local/bin/postman
+
+# Create a desktop entry
+cat <<EOF > /usr/share/applications/postman.desktop
+[Desktop Entry]
+Name=Postman
+Exec=postman
+Icon=/opt/Postman/app/resources/app/assets/icon.png
+Terminal=false
+Type=Application
+Categories=Development;
+EOF
+
+# Cleanup
+rm postman.tar.gz
+
+echo "Postman has been installed successfully."
+root@APMOSYSLT0393:/opt/Myscript-Projects/applications# cat vnc.sh 
+#!/bin/bash
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root or using sudo."
+    exit 1
+fi
+
+# Update the package lists
+echo "Updating package lists..."
+apt update
+
+# Install the necessary packages (assuming you want to use Xfce as the desktop environment)
+echo "Installing Xfce desktop and VNC Server..."
+apt install xfce4 xfce4-goodies tightvncserver -y
+
+# Create a VNC configuration file for the user (replace 'your_username' with the actual username)
+echo "Configuring VNC for the user..."
+su - aamir.shaikh@apmosys.mahape -c "echo 'exec /usr/bin/startxfce4' > ~/.vnc/xstartup"
+chmod +x /home/aamir.shaikh@apmosys.mahape/.vnc/xstartup
+
+# Set the VNC password for the user (replace 'your_password' with your chosen password)
+echo "Setting VNC password.."
+su - aamir.shaikh@apmosys.mahape -c "echo 'your_password' | vncpasswd -f > ~/.vnc/passwd"
+chmod 0600 /home/aamir.shaikh@apmosys.mahape/.vnc/passwd
+
+# Start the VNC server on display :1
+echo "Starting VNC server..."
+su - aamir.shaikh@apmosys.mahape  -c "vncserver :1"
+
+# Enable VNC server to start at boot
+echo "Enabling VNC server at boot..."
+systemctl enable vncserver@:192.168.5.135
+
+echo "VNC Server installation and configuration completed."
+
+---------------------------------------------------------
+
+container_permission.sh
+
+#!/bin/bash
+
+# Variables
+MAIN_FOLDER="/home/apmosys/NodeConnection"  # Replace with your main folder path
+GROUP_NAME="group1"             # Replace with your desired group name
+USER1="apmosys"                   # Replace with your user1 username
+USER2="devadmin"                   # Replace with your user2 username
+
+# Step 1: Create main folder and set initial permissions
+mkdir -p "$MAIN_FOLDER"
+chown "$USER1:$GROUP_NAME" "$MAIN_FOLDER"
+chmod 770 "$MAIN_FOLDER"
+
+# Step 2: Create subfolders and set permissions
+mkdir -p "$MAIN_FOLDER/subfolder1"
+mkdir -p "$MAIN_FOLDER/log"
+
+# Set permissions for subfolder1
+chown "$USER1:$GROUP_NAME" "$MAIN_FOLDER/subfolder1"
+chmod 770 "$MAIN_FOLDER/subfolder1"
+
+# Set permissions for log folder
+chown "$USER2:$GROUP_NAME" "$MAIN_FOLDER/log"
+chmod 770 "$MAIN_FOLDER/log"
+
+# Restrict user2's access to log folder
+chmod o-rwx "$MAIN_FOLDER/log"
+
+# Step 3: Ensure user1 and user2 can access files in subfolder1
+chmod -R 750 "$MAIN_FOLDER/subfolder1"
+
+# Step 4: Set setgid on main folder and subfolder1
+chmod g+s "$MAIN_FOLDER"
+chmod g+s "$MAIN_FOLDER/subfolder1"
+
+
+--------------------------------------------
+
+container_permission2.sh
+
+
+#!/bin/bash
+
+# Define variables
+MAIN_FOLDER="{{ /home/apmosys/NodeConnection }}"
+USER1="{{ apmosys }}"
+USER2="{{ devadmin }}"
+LOGWRITERS_GROUP="{{ logwriters_group }}"
+
+# Create the folder structure
+mkdir -p $MAIN_FOLDER/log
+
+# Set the ownership of the main folder to user1
+chown -R $USER1:$USER1 $MAIN_FOLDER
+
+# Set the permissions for the main folder and its contents
+chmod -R 755 $MAIN_FOLDER
+
+# Set the ownership of the log folder to user2 and allow write access
+chown -R $USER2:$USER2 $MAIN_FOLDER/log
+chmod -R 775 $MAIN_FOLDER/log
+
+# Add user2 to a new group for granting write permissions on the log folder
+groupadd -f $LOGWRITERS_GROUP
+usermod -aG $LOGWRITERS_GROUP $USER2
+usermod -aG $LOGWRITERS_GROUP $USER1
+
+# Set the group ownership of the log folder to logwriters and set appropriate permissions
+chown -R :$LOGWRITERS_GROUP $MAIN_FOLDER/log
+chmod -R 775 $MAIN_FOLDER/log
+
+# Restrict user2 to read-only access for everything outside the log folder
+setfacl -R -m u:$USER2:rx $MAIN_FOLDER
+setfacl -R -m u:$USER2:rwx $MAIN_FOLDER/log
+
+# Ensure user1 has full access and can modify files created by user2
+setfacl -R -m u:$USER1:rwx $MAIN_FOLDER
+setfacl -R -m u:$USER1:rwx $MAIN_FOLDER/log
